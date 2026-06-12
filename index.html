@@ -334,7 +334,7 @@ function newGame(mode,target){
   let pool=filterPool(mode);
   if(pool.length<6)return null;
   let idx=[...Array(pool.length).keys()];shuf(idx);idx=idx.slice(0,6);
-  return {mode,target,pool,turn:0,picks:[],locked:new Set(),state:"play",used:idx,cur:0,shown:[]};
+  return {mode,target,pool,turn:0,picks:[],locked:new Set(),state:"play",used:idx,cur:idx[0],shown:[]};
 }
 
 function getCurPoke(g){
