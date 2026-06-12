@@ -5,94 +5,348 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Stat Draft</title>
 <link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 <script src="pokemon-data.js"></script>
 <script src="species-data.js"></script>
+<script src="sprite-map.js"></script>
 <style>
+@keyframes reveal {
+  0% { opacity: 0; transform: translateY(-8px) scaleY(0.8); }
+  100% { opacity: 1; transform: translateY(0) scaleY(1); }
+}
+@keyframes statPop {
+  0% { opacity: 0; transform: translateX(-15px) scale(0.9); }
+  60% { transform: translateX(2px) scale(1.02); }
+  100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes fadeSlide {
+  0% { opacity: 0; transform: translateX(-10px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+@keyframes popIn {
+  0% { opacity: 0; transform: scale(0.8); }
+  60% { transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 4px rgba(255,203,5,0.3); }
+  50% { box-shadow: 0 0 12px rgba(255,203,5,0.6); }
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #1a1a2e; color: #e0e0e0; min-height: 100vh; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
-.container { max-width: 900px; margin: 0 auto; padding: 16px; }
-h1 { text-align: center; font-size: 24px; color: #ffcb05; text-shadow: 2px 2px 0 #3b4cca; margin-bottom: 16px; }
-.card { background: #16213e; border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 1px solid #0f3460; }
-.card-title { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
-.mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
-.mode-btn { background: #0f3460; color: #e0e0e0; border: 2px solid transparent; padding: 12px; border-radius: 8px; cursor: pointer; text-align: left; font-size: 13px; transition: all .15s; }
-.mode-btn:hover { border-color: #3b4cca; }
-.mode-btn.active { border-color: #ffcb05; background: #1a3a6a; }
-.mode-btn .count { color: #888; font-size: 11px; margin-top: 2px; }
-.target-row { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
-.target-row input { flex: 1; min-width: 80px; padding: 10px; border-radius: 8px; border: 1px solid #0f3460; background: #0f3460; color: #e0e0e0; font-size: 16px; }
-.btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
-.btn-pri { background: #ffcb05; color: #1a1a2e; border: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; }
-.btn-pri:disabled { opacity: .4; cursor: not-allowed; }
-.btn-red { background: #e74c3c; color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
-.btn-red:disabled { opacity: .4; cursor: not-allowed; }
-.btn-blue { background: #3498db; color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
-.btn-blue:disabled { opacity: .4; cursor: not-allowed; }
-.btn-next { background: #3b4cca; color: #fff; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; cursor: pointer; margin-top: 10px; }
-.btn-sm { background: #0f3460; color: #e0e0e0; border: 1px solid #3b4cca; padding: 5px 12px; border-radius: 6px; font-size: 11px; cursor: pointer; }
-.btn-sm.active { border-color: #ffcb05; color: #ffcb05; }
+body {
+  font-family: 'VT323', monospace;
+  background: #0f0f23;
+  color: #e8e8e8;
+  min-height: 100vh;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  background-image:
+    radial-gradient(ellipse at 20% 50%, #1a1a3e 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 50%, #1a1a3e 0%, transparent 50%);
+}
+.container { max-width: 860px; margin: 0 auto; padding: 12px; }
+h1 {
+  font-family: 'Press Start 2P', monospace;
+  text-align: center;
+  font-size: 18px;
+  color: #ffcb05;
+  text-shadow: 2px 2px 0 #3b4cca, -1px -1px 0 #3b4cca;
+  margin-bottom: 14px;
+  letter-spacing: 1px;
+  word-break: break-word;
+}
+
+.card {
+  background: linear-gradient(135deg, #1e2a4a 0%, #162040 100%);
+  border: 2px solid #3b4cca;
+  border-radius: 0;
+  padding: 14px;
+  margin-bottom: 10px;
+  position: relative;
+  box-shadow:
+    inset 0 0 0 2px #0f0f23,
+    0 2px 8px rgba(0,0,0,0.4);
+}
+.card-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: #8899bb;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+
+.mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px; }
+.mode-btn {
+  background: #121c34;
+  color: #c8d0e0;
+  border: 2px solid #2a3a6a;
+  padding: 10px;
+  cursor: pointer;
+  text-align: left;
+  font-family: 'VT323', monospace;
+  font-size: 14px;
+  transition: all .15s;
+}
+.mode-btn:hover { border-color: #5a7acc; background: #1a2a4a; }
+.mode-btn.active { border-color: #ffcb05; background: #1a2a4a; box-shadow: inset 0 0 0 1px #ffcb05; }
+.mode-btn .count { color: #7788aa; font-size: 12px; margin-top: 2px; }
+
+.target-row { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+.target-row input {
+  flex: 1; min-width: 80px; padding: 8px;
+  border: 2px solid #2a3a6a;
+  background: #0a1428;
+  color: #ffcb05;
+  font-family: 'VT323', monospace;
+  font-size: 20px;
+  outline: none;
+}
+.target-row input:focus { border-color: #ffcb05; }
+.btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.btn {
+  border: none;
+  padding: 8px 16px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  cursor: pointer;
+  transition: all .1s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.btn:active { transform: scale(0.95); }
+.btn:disabled { opacity: .35; cursor: not-allowed; transform: none; }
+.btn-pri { background: #ffcb05; color: #0f0f23; }
+.btn-red { background: #cc3333; color: #fff; }
+.btn-blue { background: #3366cc; color: #fff; }
+.btn-next {
+  background: #3b4cca;
+  color: #fff;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  padding: 8px 20px;
+  margin-top: 10px;
+  border: none;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+}
+.btn-next:active { transform: scale(0.95); }
+.btn-sm {
+  background: #121c34;
+  color: #8899bb;
+  border: 1px solid #2a3a6a;
+  padding: 4px 10px;
+  font-family: 'VT323', monospace;
+  font-size: 13px;
+  cursor: pointer;
+}
+.btn-sm.active { border-color: #ffcb05; color: #ffcb05; background: #1a2a4a; }
+
 .screen { display: none; }
-.screen.active { display: block; }
-.poke-name { text-align: center; font-size: 24px; font-weight: 700; color: #ffcb05; margin-bottom: 4px; }
-.poke-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; }
+.screen.active { display: block; animation: fadeSlide .25s ease-out; }
+
+/* Pokemon card display */
+.poke-header { text-align: center; margin-bottom: 10px; position: relative; }
+.poke-sprite {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  margin-bottom: 4px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+.poke-sprite.loading { opacity: 0.5; }
+.poke-sprite-wrap {
+  display: inline-block;
+  background: radial-gradient(circle, #1a2a4a 0%, #0f1a30 100%);
+  border: 2px solid #2a3a6a;
+  padding: 6px;
+  margin-bottom: 6px;
+  position: relative;
+}
+.poke-name {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 13px;
+  color: #ffcb05;
+  text-shadow: 1px 1px 0 #3b4cca;
+  margin-bottom: 3px;
+}
+.poke-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  letter-spacing: 0.5px;
+}
 .badge-regular { background: #3b4cca; color: #fff; }
-.badge-mega { background: #e74c3c; color: #fff; }
-.badge-legendary { background: #f39c12; color: #1a1a2e; }
-.badge-mythical { background: #9b59b6; color: #fff; }
-.stat-row { display: flex; align-items: center; padding: 8px; margin-bottom: 4px; border-radius: 8px; background: #0f3460; gap: 8px; font-size: 13px; }
-.stat-row.clickable { cursor: pointer; transition: all .15s; }
-.stat-row.clickable:hover { background: #1a3a6a; transform: translateX(3px); }
-.stat-row.locked { opacity: .4; }
-.stat-row.picked { background: #1a4a2e; border: 1px solid #78c850; }
-.stat-row.missed { background: #4a1a1a; border: 1px solid #ff5959; }
-.stat-row.best-highlight { border-left: 3px solid #ffcb05; }
-.stat-lbl { width: 70px; font-weight: 600; font-size: 13px; }
-.stat-val { width: 36px; text-align: right; font-weight: 700; font-size: 14px; }
-.stat-bar { flex: 1; height: 10px; background: #0a1a30; border-radius: 5px; overflow: hidden; }
-.stat-fill { height: 100%; border-radius: 5px; transition: width .4s; }
+.badge-mega { background: #cc3333; color: #fff; }
+.badge-legendary { background: #ff8c00; color: #0f0f23; }
+.badge-mythical { background: #8844aa; color: #fff; }
+
+.stat-row {
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  margin-bottom: 3px;
+  background: #0a1428;
+  gap: 6px;
+  font-size: 16px;
+  border-left: 3px solid transparent;
+  transition: all .2s;
+}
+.stat-row.clickable { cursor: pointer; }
+.stat-row.clickable:hover {
+  background: #1a2a4a;
+  border-left-color: #ffcb05;
+  transform: translateX(2px);
+}
+.stat-row.locked { opacity: .35; }
+.stat-row.reveal {
+  animation: statPop .4s ease-out both;
+}
+.stat-row.picked {
+  background: #0a2a18;
+  border-left-color: #78c850;
+}
+
+.stat-row.missed {
+  background: #2a0a0a;
+  border-left-color: #ff4444;
+  animation: reveal .35s ease-out;
+}
+.stat-row.best-highlight { border-left-color: #ffcb05; }
+.stat-lbl {
+  width: 70px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: #8899bb;
+}
+.stat-val {
+  width: 36px;
+  text-align: right;
+  font-weight: 700;
+  font-size: 18px;
+  color: #e8e8e8;
+}
+.stat-bar { flex: 1; height: 8px; background: #060e1c; overflow: hidden; }
+.stat-fill { height: 100%; transition: width .5s ease-out; }
 .stat-fill.hp { background: #ff5959; }
 .stat-fill.attack { background: #f08030; }
 .stat-fill.defense { background: #f5d743; }
 .stat-fill.special-attack { background: #6890f0; }
 .stat-fill.special-defense { background: #78c850; }
 .stat-fill.speed { background: #f85888; }
-.stat-marker { min-width: 50px; text-align: right; font-size: 11px; color: #888; }
-.header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 13px; flex-wrap: wrap; gap: 6px; }
-.header-bar .stat { background: #0f3460; padding: 5px 10px; border-radius: 6px; }
-.header-bar .prog { color: #ffcb05; font-weight: 700; }
-.speed-ctrl { display: flex; gap: 4px; align-items: center; margin-bottom: 10px; }
-.speed-ctrl span { font-size: 11px; color: #888; }
-.history { display: flex; flex-direction: column; gap: 4px; }
-.history-item { display: flex; justify-content: space-between; padding: 6px 10px; background: #0f3460; border-radius: 6px; font-size: 12px; }
-.bot-dec { background: #1a1a3e; border: 1px solid #e74c3c; border-radius: 8px; padding: 10px; margin-top: 8px; font-size: 13px; }
-.bot-dec.perfect { border-color: #3498db; }
-.conf-bar { height: 5px; background: #0a1a30; border-radius: 3px; overflow: hidden; margin: 5px 0; }
-.conf-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #e74c3c, #f39c12, #78c850); transition: width .6s; }
-.bot-feats { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 6px; }
-.bot-feat { background: #0f3460; padding: 2px 6px; border-radius: 4px; font-size: 10px; color: #888; }
-.bot-feat strong { color: #e0e0e0; }
-.summary-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px; }
-.summary-item { background: #0f3460; border-radius: 8px; padding: 10px; text-align: center; }
-.summary-item .val { font-size: 22px; font-weight: 700; }
-.summary-item .lbl { font-size: 10px; color: #888; margin-top: 2px; }
-.opt-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
-.opt-table th { text-align: left; padding: 6px 10px; color: #888; border-bottom: 1px solid #0f3460; font-size: 11px; }
-.opt-table td { padding: 6px 10px; border-bottom: 1px solid #0a1a30; }
-#err-msg { color: #ff5959; text-align: center; margin: 10px 0; display: none; font-size: 13px; }
+.stat-marker {
+  min-width: 50px;
+  text-align: right;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  color: #667788;
+}
+
+.header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 16px;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.header-bar .stat {
+  background: #0a1428;
+  padding: 4px 8px;
+  border: 1px solid #2a3a6a;
+}
+.header-bar .prog { color: #ffcb05; font-weight: 700; font-size: 20px; }
+
+.speed-ctrl { display: flex; gap: 4px; align-items: center; margin-bottom: 8px; }
+.speed-ctrl span { font-size: 14px; color: #667788; margin-right: 4px; }
+
+.history { display: flex; flex-direction: column; gap: 3px; }
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  background: #0a1428;
+  font-size: 15px;
+  animation: fadeSlide .2s ease-out;
+}
+.history-item .hist-sprite {
+  image-rendering: pixelated;
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.bot-dec {
+  background: #0a0a1e;
+  border: 1px solid #cc3333;
+  padding: 8px;
+  margin-top: 6px;
+  font-size: 15px;
+}
+.bot-dec.perfect { border-color: #3366cc; }
+.conf-bar { height: 4px; background: #060e1c; margin: 4px 0; }
+.conf-fill { height: 100%; background: linear-gradient(90deg, #cc3333, #ff8c00, #78c850); transition: width .6s; }
+.bot-feats { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 4px; }
+.bot-feat {
+  background: #121c34;
+  padding: 1px 6px;
+  font-size: 13px;
+  color: #7788aa;
+}
+.bot-feat strong { color: #c8d0e0; }
+
+.summary-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; margin-top: 8px; }
+.summary-item {
+  background: #0a1428;
+  border: 1px solid #2a3a6a;
+  padding: 8px;
+  text-align: center;
+}
+.summary-item .val { font-size: 24px; font-weight: 700; }
+.summary-item .lbl { font-family: 'Press Start 2P', monospace; font-size: 7px; color: #667788; margin-top: 2px; }
+
+.opt-table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 15px; }
+.opt-table th { text-align: left; padding: 4px 8px; color: #667788; border-bottom: 1px solid #2a3a6a; font-family: 'Press Start 2P', monospace; font-size: 7px; }
+.opt-table td { padding: 4px 8px; border-bottom: 1px solid #0a1428; }
+
+#err-msg {
+  color: #ff4444;
+  text-align: center;
+  margin: 8px 0;
+  display: none;
+  font-size: 16px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+}
+
 @media (max-width: 500px) {
-  .container { padding: 10px; }
-  .card { padding: 12px; }
-  .stat-row { padding: 6px; font-size: 12px; }
-  .stat-lbl { width: 55px; font-size: 11px; }
-  .stat-val { width: 30px; font-size: 12px; }
-  .poke-name { font-size: 20px; }
-  .btn-row button { font-size: 12px; padding: 8px 12px; }
+  .container { padding: 8px; }
+  .card { padding: 10px; }
+  h1 { font-size: 14px; }
+  .poke-name { font-size: 11px; }
+  .poke-sprite { width: 64px; height: 64px; }
+  .stat-row { padding: 5px 8px; font-size: 14px; }
+  .stat-lbl { width: 55px; font-size: 7px; }
+  .stat-val { width: 30px; font-size: 16px; }
+  .stat-marker { min-width: 40px; font-size: 6px; }
+  .btn { font-size: 8px; padding: 6px 12px; }
+  .summary-item .val { font-size: 20px; }
+  .header-bar { font-size: 14px; }
 }
 </style>
 </head>
 <body>
 <div class="container">
-<h1>⚡ Stat Draft</h1>
+<h1>Stat Draft</h1>
 <div id="err-msg"></div>
 
 <div id="s-start" class="screen active">
@@ -103,9 +357,9 @@ h1 { text-align: center; font-size: 24px; color: #ffcb05; text-shadow: 2px 2px 0
     <div class="target-row">
       <input type="number" id="target-inp" value="400" min="1">
       <div class="btn-row">
-        <button class="btn-pri" id="btn-play">Play</button>
-        <button class="btn-red" id="btn-ai">🤖 AI Bot</button>
-        <button class="btn-blue" id="btn-poke">🧠 PokeBot</button>
+        <button class="btn btn-pri" id="btn-play">Play</button>
+        <button class="btn btn-red" id="btn-ai">AI Bot</button>
+        <button class="btn btn-blue" id="btn-poke">PokeBot</button>
       </div>
     </div>
   </div>
@@ -128,15 +382,19 @@ h1 { text-align: center; font-size: 24px; color: #ffcb05; text-shadow: 2px 2px 0
 
 <div id="s-res" class="screen">
   <div class="card">
-    <div class="result-grid" id="res-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px"></div>
+    <div class="result-grid" id="res-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Your Team</div>
+    <div id="res-team" class="history"></div>
   </div>
   <div class="card">
     <div class="card-title">Optimal Assignment</div>
     <div id="res-opt"></div>
   </div>
   <div class="card" style="text-align:center">
-    <button class="btn-pri" onclick="backStart()">Menu</button>
-    <button class="btn-pri" onclick="playAgain()" style="margin-left:8px">Play Again</button>
+    <button class="btn btn-pri" onclick="backStart()">Menu</button>
+    <button class="btn btn-pri" onclick="playAgain()" style="margin-left:6px">Play Again</button>
   </div>
 </div>
 
@@ -164,7 +422,7 @@ h1 { text-align: center; font-size: 24px; color: #ffcb05; text-shadow: 2px 2px 0
 
 <div id="s-bres" class="screen">
   <div class="card">
-    <div class="card-title" id="bres-title">🤖 Results</div>
+    <div class="card-title" id="bres-title">Bot Results</div>
     <div class="summary-grid" id="bres-summary"></div>
   </div>
   <div class="card">
@@ -176,8 +434,8 @@ h1 { text-align: center; font-size: 24px; color: #ffcb05; text-shadow: 2px 2px 0
     <div id="bres-opt"></div>
   </div>
   <div class="card" style="text-align:center">
-    <button class="btn-pri" onclick="backStart()">Menu</button>
-    <button class="btn-red" id="bres-again" onclick="runBot(botMode)" style="margin-left:8px">Play Again</button>
+    <button class="btn btn-pri" onclick="backStart()">Menu</button>
+    <button class="btn btn-red" id="bres-again" onclick="runBot(botMode)" style="margin-left:6px">Play Again</button>
   </div>
 </div>
 </div>
@@ -194,7 +452,6 @@ let curTarget = 400;
 let gameState = null;
 let revData = null;
 
-// Bot state
 let botSpeed = 1200;
 let botMode = "ai";
 let botData = null;
@@ -229,11 +486,18 @@ function bestPossible(list){
 
 function shuf(a){for(let i=a.length-1;i>0;i--){let j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a}
 
-// ── Language model (simple stopwords) ──
+function spriteHtml(apiName, size){
+  let id = SPRITE_DATA[apiName];
+  if(!id) return '';
+  let s = size || 80;
+  let url = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/'+id+'.png';
+  return '<img class="poke-sprite" src="'+url+'" width="'+s+'" height="'+s+'" alt="">';
+}
+
+// ── Language model ──
 const SW=new Set("the a an it its is are was were be been to of in for on with at by from as into through and or but not no this that these those their has have had can will may all each every both which who what when where how does do s t m ll re ve d o".split(" "));
 function tok(t){return(t.toLowerCase().match(/[a-z]+/g)||[]).filter(w=>!SW.has(w)&&w.length>2)}
 
-// ── Feature extraction ──
 function features(pk){
   let f=new Set();
   tok(pk.name).forEach(w=>f.add("name:"+w));
@@ -264,7 +528,6 @@ function features(pk){
   return [...f];
 }
 
-// ── Learning Bot ──
 class LearnBot{
   constructor(lr=0.3){this.lr=lr;this.w={};this.b=[0,0,0,0,0,0];this.picks=0}
   pred(f){
@@ -351,7 +614,7 @@ function doPick(g,stat){
   if(g.locked.has(stat))return null;
   let pk=g.pool[g.cur];
   let val=pk.stats[stat]||0;
-  g.picks.push({name:pk.name,stat,val});
+  g.picks.push({name:pk.name,stat,val,api_name:pk.api_name});
   g.locked.add(stat);
   g.shown.push(pk);
   g.cur=null;
@@ -404,23 +667,29 @@ function renderPoke(g){
   if(!pk&&revData)pk=g.shown[g.shown.length-1];
   if(!pk){el.innerHTML="";return}
   let cls=MODE_CLS[selMode]||"badge-regular",lb=MODE_LBL[selMode]||"Regular";
-  let h='<div style="text-align:center;margin-bottom:10px"><div class="poke-name">'+pk.name+'</div><span class="poke-badge '+cls+'">'+lb+'</span></div>';
-  for(let s of ORDER){
-    let lk=g.locked.has(s),rv=revData&&revData.name===pk.name,pi=rv&&revData.chosen===s;
-    let cl="stat-row"+(lk?" locked":" clickable")+(rv?"":"")+(pi?" picked":"");
-    let v=rv?revData.stats[s]:"???",ba=rv?'<div class="stat-bar"><div class="stat-fill '+s+'" style="width:'+Math.min(100,revData.stats[s]/2.55)+'%"></div></div>':lk?'<div class="stat-bar"></div>':'<div class="stat-bar" style="background:#0a1a30"><div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:10px;color:#555">???</div></div>';
-    let mk=lk?"🔒":rv?"":"Pick →";
+  let isRev=revData&&revData.name===pk.name;
+  let h='<div class="poke-header">';
+  h+='<div class="poke-sprite-wrap">'+spriteHtml(pk.api_name)+'</div>';
+  h+='<div class="poke-name">'+pk.name+'</div>';
+  h+='<span class="poke-badge '+cls+'">'+lb+'</span></div>';
+  for(let i=0;i<ORDER.length;i++){
+    let s=ORDER[i];
+    let lk=g.locked.has(s),rv=isRev,pi=rv&&revData.chosen===s;
+    let cl="stat-row"+(lk?" locked":" clickable")+(rv?" reveal":"")+(pi?" picked":"");
+    let v=rv?revData.stats[s]:"???",ba=rv?'<div class="stat-bar"><div class="stat-fill '+s+'" style="width:'+Math.min(100,revData.stats[s]/2.55)+'%"></div></div>':lk?'<div class="stat-bar"></div>':'<div class="stat-bar"><div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#445566">???</div></div>';
+    let mk=lk?"LOCKED":rv?"":"PICK";
     let oc=lk||rv?"":'onclick="pickStat(\''+s+'\')"';
-    h+='<div '+oc+' class="'+cl+'"><span class="stat-lbl">'+LBL[s]+'</span><span class="stat-val">'+v+'</span>'+ba+'<span class="stat-marker">'+mk+'</span></div>';
+    let delay=rv?' style="animation-delay:'+(i*0.07)+'s"':'';
+    h+='<div '+oc+' class="'+cl+'"'+delay+'><span class="stat-lbl">'+LBL[s]+'</span><span class="stat-val">'+v+'</span>'+ba+'<span class="stat-marker">'+mk+'</span></div>';
   }
-  if(revData&&revData.name===pk.name)h+='<div style="text-align:center"><button class="btn-next" onclick="nextTurn()">Next →</button></div>';
+  if(isRev)h+='<div style="text-align:center"><button class="btn-next" onclick="nextTurn()">NEXT</button></div>';
   el.innerHTML=h;
 }
 
 function renderHist(g){
   let el=document.getElementById("g-hist");
-  if(!g.picks.length){el.innerHTML='<div style="color:#555;font-size:12px">No picks</div>';return}
-  el.innerHTML=g.picks.map(p=>'<div class="history-item"><span>'+p.name+' — '+LBL[p.stat]+'</span><strong>'+p.val+'</strong></div>').join("");
+  if(!g.picks.length){el.innerHTML='<div style="color:#445566;font-size:15px">No picks</div>';return}
+  el.innerHTML=g.picks.map(p=>'<div class="history-item">'+spriteHtml(p.api_name,28)+'<span>'+p.name+' — '+LBL[p.stat]+'</span><strong>'+p.val+'</strong></div>').join("");
 }
 
 function pickStat(s){
@@ -440,10 +709,14 @@ function showRes(g){
   showScreen("s-res");
   let tot=g.picks.reduce((s,p)=>s+p.val,0),pas=tot>=g.target;
   let [best,ba]=bestPossible(g.shown);
-  document.getElementById("res-grid").innerHTML='<div class="summary-item"><div class="lbl">Score</div><div class="val" style="color:'+(pas?'#78c850':'#ff5959')+'">'+tot+'</div></div><div class="summary-item"><div class="lbl">Target</div><div class="val" style="color:#ffcb05">'+g.target+'</div></div><div class="summary-item"><div class="lbl">Best</div><div class="val" style="color:#6890f0">'+best+'</div></div><div class="summary-item"><div class="lbl">Result</div><div class="val" style="color:'+(pas?'#78c850':'#ff5959')+'">'+(pas?'PASS':'FAIL')+'</div></div>';
+  let phtml='<div class="summary-item"><div class="lbl">Score</div><div class="val" style="color:'+(pas?'#78c850':'#ff5959')+'">'+tot+'</div></div><div class="summary-item"><div class="lbl">Target</div><div class="val" style="color:#ffcb05">'+g.target+'</div></div><div class="summary-item"><div class="lbl">Best</div><div class="val" style="color:#6890f0">'+best+'</div></div><div class="summary-item"><div class="lbl">Result</div><div class="val" style="color:'+(pas?'#78c850':'#ff5959')+'">'+(pas?'PASS':'FAIL')+'</div></div>';
+  document.getElementById("res-grid").innerHTML=phtml;
+  document.getElementById("res-team").innerHTML=g.picks.map(p=>'<div class="history-item">'+spriteHtml(p.api_name,32)+'<span>'+p.name+' — '+LBL[p.stat]+'</span><strong>'+p.val+'</strong></div>').join("");
   let o=document.getElementById("res-opt");
-  if(ba)o.innerHTML='<table class="opt-table"><tr><th>Stat</th><th>Pokemon</th><th>Val</th></tr>'+ba.map(x=>'<tr><td>'+LBL[x[0]]+'</td><td>'+x[1]+'</td><td><strong>'+x[2]+'</strong></td></tr>').join("")+'</table>';
-  else o.innerHTML='<div style="color:#888;font-size:12px">No data</div>';
+  if(ba){
+    let apiMap={};g.shown.forEach(p=>{apiMap[p.name]=p.api_name});
+    o.innerHTML='<table class="opt-table"><tr><th>Stat</th><th>Pokemon</th><th>Val</th></tr>'+ba.map(x=>'<tr><td>'+LBL[x[0]]+'</td><td>'+(apiMap[x[1]]?spriteHtml(apiMap[x[1]],24)+' ':'')+x[1]+'</td><td><strong>'+x[2]+'</strong></td></tr>').join("")+'</table>';
+  }else o.innerHTML='<div style="color:#445566;font-size:15px">No data</div>';
 }
 
 function playAgain(){
@@ -477,7 +750,7 @@ function runBot(mode){
       let sorted=ORDER.map(s=>({s, v:pk.stats[s]||0})).sort((a,b)=>b.v-a.v).slice(0,3);
       feats=sorted.map(x=>({feature:LBL[x.s]+"="+x.v,weight:x.v}));
     }
-    turns.push({pokemon:{name:pk.name,stats:Object.fromEntries(ORDER.map(s=>[LBL[s],pk.stats[s]||0]))},decision:{picked:LBL[st],actualBest:LBL[ab],value:val,bestVal:pk.stats[ab],confidence:conf},features:feats,locked:[...locked]});
+    turns.push({pokemon:{name:pk.name,api_name:pk.api_name,stats:Object.fromEntries(ORDER.map(s=>[LBL[s],pk.stats[s]||0]))},decision:{picked:LBL[st],actualBest:LBL[ab],value:val,bestVal:pk.stats[ab],confidence:conf},features:feats,locked:[...locked]});
   }
   let [best,ba]=bestPossible(avail.map(i=>pool[i]));
   let eff=best>0?Math.round(total/best*1000)/10:0;
@@ -496,7 +769,9 @@ function renderBotTurn(){
   document.getElementById("b-score").textContent="Score: "+tot;
   document.getElementById("b-prog").textContent=tot;
   let pk=tr.pokemon,bd=tr.decision;
-  let h='<div style="text-align:center;margin-bottom:10px"><div class="poke-name">'+pk.name+' <span class="poke-badge" style="background:'+(isAI?"#e74c3c":"#3498db")+';color:#fff;font-size:9px">'+(isAI?"AI":"Poke")+'</span></div></div>';
+  let h='<div class="poke-header">';
+  h+='<div class="poke-sprite-wrap">'+spriteHtml(pk.api_name)+'</div>';
+  h+='<div class="poke-name">'+pk.name+' <span class="poke-badge" style="background:'+(isAI?"#cc3333":"#3366cc")+';color:#fff;font-family:\'Press Start 2P\',monospace;font-size:7px">'+(isAI?"AI":"Poke")+'</span></div></div>';
   for(let sk of ORDER){
     let sl=LBL[sk],val=pk.stats[sl]||0,pi=sl===bd.picked,bi=sl===bd.actualBest;
     let cl="stat-row";
@@ -505,19 +780,19 @@ function renderBotTurn(){
     let pct=Math.min(100,val/2.55);
     let ba='<div class="stat-bar"><div class="stat-fill '+sk+'" style="width:'+pct+'%"></div></div>';
     let mk="";
-    if(pi)mk=bi?"✓ Pick":"✗ Pick";
-    else if(bi)mk="★ Best";
+    if(pi)mk=bi?"PICK":"MISS";
+    else if(bi)mk="BEST";
     h+='<div class="'+cl+'"><span class="stat-lbl">'+sl+'</span><span class="stat-val">'+val+'</span>'+ba+'<span class="stat-marker">'+mk+'</span></div>';
   }
   let cor=bd.picked===bd.actualBest;
-  h+='<div class="bot-dec'+(isAI?"":" perfect")+'" style="border-color:'+(isAI?"#e74c3c":"#3498db")+'">';
+  h+='<div class="bot-dec'+(isAI?"":" perfect")+'" style="border-color:'+(isAI?"#cc3333":"#3366cc")+'">';
   if(isAI){
     let cnf=Math.min(100,Math.max(0,(bd.confidence+2)/4*100));
-    h+='<div>Picked <strong>'+bd.picked+'</strong> ('+bd.value+') conf:'+bd.confidence.toFixed(2)+' — best: <strong>'+bd.actualBest+'</strong> ('+bd.bestVal+') <span style="color:'+(cor?"#78c850":"#ff5959")+'">'+(cor?"✓":"✗")+'</span></div>';
+    h+='<div>Picked <strong>'+bd.picked+'</strong> ('+bd.value+') conf:'+bd.confidence.toFixed(2)+' — best: <strong>'+bd.actualBest+'</strong> ('+bd.bestVal+') <span style="color:'+(cor?"#78c850":"#ff4444")+'">'+(cor?"OK":"NO")+'</span></div>';
     h+='<div class="conf-bar"><div class="conf-fill" style="width:'+cnf+'%"></div></div>';
   }else{
-    h+='<div>Picked <strong>'+bd.picked+'</strong> = '+bd.value+' — best: <strong>'+bd.actualBest+'</strong> = '+bd.bestVal+' <span style="color:'+(cor?"#78c850":"#ff5959")+'">'+(cor?"✓":"✗")+'</span></div>';
-    h+='<div style="color:#888;font-size:11px;margin-top:3px">Knows stats — greedy pick</div>';
+    h+='<div>Picked <strong>'+bd.picked+'</strong> = '+bd.value+' — best: <strong>'+bd.actualBest+'</strong> = '+bd.bestVal+' <span style="color:'+(cor?"#78c850":"#ff4444")+'">'+(cor?"OK":"NO")+'</span></div>';
+    h+='<div style="color:#667788;font-size:14px;margin-top:2px">Greedy pick — knows all stats</div>';
   }
   if(tr.features.length){
     h+='<div class="bot-feats">';
@@ -526,9 +801,8 @@ function renderBotTurn(){
   }
   h+='</div>';
   document.getElementById("b-poke").innerHTML=h;
-  // History
   let hh="";
-  for(let i=0;i<=t;i++){let d=botData.turns[i].decision;hh+='<div class="history-item"><span>'+(i+1)+'. '+botData.turns[i].pokemon.name+' — '+d.picked+'</span><strong>'+d.value+' '+(d.picked===d.actualBest?"✓":"✗")+'</strong></div>'}
+  for(let i=0;i<=t;i++){let d=botData.turns[i];hh+='<div class="history-item">'+spriteHtml(d.pokemon.api_name,28)+'<span>'+(i+1)+'. '+d.pokemon.name+' — '+d.decision.picked+'</span><strong>'+d.decision.value+' '+(d.decision.picked===d.decision.actualBest?"OK":"")+'</strong></div>'}
   document.getElementById("b-hist").innerHTML=hh;
   if(t+1<6){if(botSpeed>0)setTimeout(()=>{botTurn++;renderBotTurn()},botSpeed);else{botTurn++;renderBotTurn()}}
   else setTimeout(showBotRes,botSpeed);
@@ -536,18 +810,20 @@ function renderBotTurn(){
 
 function showBotRes(){
   let g=botData,isAI=botMode==="ai";
-  let theme=isAI?{name:"AI Bot",color:"#e74c3c",icon:"🤖"}:{name:"PokeBot",color:"#3498db",icon:"🧠"};
+  let theme=isAI?{name:"AI Bot",color:"#cc3333"}:{name:"PokeBot",color:"#3366cc"};
   showScreen("s-bres");
-  document.getElementById("bres-title").textContent=theme.icon+" "+theme.name+(g.passed?" PASSED":" FAILED");
-  document.getElementById("bres-again").textContent=theme.icon+" Play Again";
+  document.getElementById("bres-title").textContent=theme.name+(g.passed?" PASSED":" FAILED");
+  document.getElementById("bres-again").textContent="Play Again";
   document.getElementById("bres-again").style.background=theme.color;
-  document.getElementById("bres-summary").innerHTML='<div class="summary-item"><div class="lbl">Score</div><div class="val" style="color:'+(g.passed?"#78c850":"#ff5959")+'">'+g.total+'</div></div><div class="summary-item"><div class="lbl">Target</div><div class="val" style="color:#ffcb05">'+g.target+'</div></div><div class="summary-item"><div class="lbl">Efficiency</div><div class="val" style="color:#6890f0">'+g.efficiency+'%</div></div>';
+  document.getElementById("bres-summary").innerHTML='<div class="summary-item"><div class="lbl">Score</div><div class="val" style="color:'+(g.passed?"#78c850":"#ff4444")+'">'+g.total+'</div></div><div class="summary-item"><div class="lbl">Target</div><div class="val" style="color:#ffcb05">'+g.target+'</div></div><div class="summary-item"><div class="lbl">Efficiency</div><div class="val" style="color:#6890f0">'+g.efficiency+'%</div></div><div class="summary-item"><div class="lbl">Result</div><div class="val" style="color:'+(g.passed?"#78c850":"#ff4444")+'">'+(g.passed?"PASS":"FAIL")+'</div></div>';
   let h="";
-  for(let i=0;i<g.turns.length;i++){let d=g.turns[i].decision,c=d.picked===d.actualBest;h+='<div class="history-item" style="margin-bottom:3px"><span>'+(i+1)+'. '+g.turns[i].pokemon.name+'</span><span>'+d.picked+' ('+d.value+') <span style="color:'+(c?"#78c850":"#ff5959")+'">'+(c?"✓":"✗ best: "+d.actualBest+"="+d.bestVal)+'</span></span></div>'}
+  for(let i=0;i<g.turns.length;i++){let d=g.turns[i].decision,c=d.picked===d.actualBest;h+='<div class="history-item">'+spriteHtml(g.turns[i].pokemon.api_name,32)+'<span>'+(i+1)+'. '+g.turns[i].pokemon.name+'</span><span>'+d.picked+' ('+d.value+') <span style="color:'+(c?"#78c850":"#ff4444")+'">'+(c?"OK":"best: "+d.actualBest+"="+d.bestVal)+'</span></span></div>'}
   document.getElementById("bres-review").innerHTML=h;
   let o=document.getElementById("bres-opt");
-  if(g.optimal.length)o.innerHTML='<table class="opt-table"><tr><th>Stat</th><th>Pokemon</th><th>Val</th></tr>'+g.optimal.map(x=>'<tr><td>'+x.stat+'</td><td>'+x.name+'</td><td><strong>'+x.val+'</strong></td></tr>').join("")+'</table>';
-  else o.innerHTML='<div style="color:#888;font-size:12px">No data</div>';
+  if(g.optimal.length){
+    let apiMap={};g.turns.forEach(t=>{apiMap[t.pokemon.name]=t.pokemon.api_name});
+    o.innerHTML='<table class="opt-table"><tr><th>Stat</th><th>Pokemon</th><th>Val</th></tr>'+g.optimal.map(x=>'<tr><td>'+x.stat+'</td><td>'+(apiMap[x.name]?spriteHtml(apiMap[x.name],24)+' ':'')+x.name+'</td><td><strong>'+x.val+'</strong></td></tr>').join("")+'</table>';
+  }else o.innerHTML='<div style="color:#445566;font-size:15px">No data</div>';
 }
 
 function showScreen(id){
