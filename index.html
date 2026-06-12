@@ -394,12 +394,14 @@ function renderGame(){
   document.getElementById("g-prog").textContent=tot;
   document.getElementById("g-target").textContent=g.target;
   if(g.state==="done"){showRes(g);return}
+  getCurPoke(g);
   renderPoke(g);
   renderHist(g);
 }
 
 function renderPoke(g){
-  let el=document.getElementById("g-poke"),pk=g.pool[g.cur];
+  let el=document.getElementById("g-poke"),pk=g.cur!==null?g.pool[g.cur]:null;
+  if(!pk&&revData)pk=g.shown[g.shown.length-1];
   if(!pk){el.innerHTML="";return}
   let cls=MODE_CLS[selMode]||"badge-regular",lb=MODE_LBL[selMode]||"Regular";
   let h='<div style="text-align:center;margin-bottom:10px"><div class="poke-name">'+pk.name+'</div><span class="poke-badge '+cls+'">'+lb+'</span></div>';
