@@ -160,6 +160,14 @@ h1 {
   margin-bottom: 4px;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
 }
+.poke-sprite.shiny {
+  filter: drop-shadow(0 0 8px rgba(255,215,0,0.7)) drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+  animation: shinyGlow 2s ease-in-out infinite;
+}
+@keyframes shinyGlow {
+  0%, 100% { filter: drop-shadow(0 0 6px rgba(255,215,0,0.5)) drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+  50% { filter: drop-shadow(0 0 14px rgba(255,215,0,0.9)) drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+}
 .poke-sprite.loading { opacity: 0.5; }
 .poke-sprite-wrap {
   display: inline-block;
@@ -168,6 +176,29 @@ h1 {
   padding: 6px;
   margin-bottom: 6px;
   position: relative;
+}
+.poke-sprite-wrap.shiny {
+  border-color: #ffd700;
+  box-shadow: 0 0 10px rgba(255,215,0,0.4), inset 0 0 10px rgba(255,215,0,0.1);
+  animation: shinyBorder 2s ease-in-out infinite;
+}
+@keyframes shinyBorder {
+  0%, 100% { border-color: #ffd700; box-shadow: 0 0 8px rgba(255,215,0,0.3); }
+  50% { border-color: #ffec80; box-shadow: 0 0 16px rgba(255,215,0,0.6); }
+}
+.shiny-star {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  font-size: 16px;
+  filter: drop-shadow(0 0 3px rgba(255,215,0,0.8));
+  animation: shinySpin 3s linear infinite;
+  pointer-events: none;
+}
+@keyframes shinySpin {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.2); }
+  100% { transform: rotate(360deg) scale(1); }
 }
 .poke-name {
   font-family: 'Press Start 2P', monospace;
@@ -187,6 +218,16 @@ h1 {
 .badge-mega { background: #cc3333; color: #fff; }
 .badge-legendary { background: #ff8c00; color: #0f0f23; }
 .badge-mythical { background: #8844aa; color: #fff; }
+.type-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  margin: 0 2px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  color: #fff;
+  letter-spacing: 0.5px;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+}
 
 .stat-row {
   display: flex;
@@ -444,6 +485,7 @@ h1 {
 const ORDER = ["hp","attack","defense","special-attack","special-defense","speed"];
 const LBL = {"hp":"HP","attack":"Attack","defense":"Defense","special-attack":"Sp.Atk","special-defense":"Sp.Def","speed":"Speed"};
 const COL = {"hp":"#ff5959","attack":"#f08030","defense":"#f5d743","special-attack":"#6890f0","special-defense":"#78c850","speed":"#f85888"};
+const TYPECOL = {"normal":"#A8A878","fire":"#F08030","water":"#6890F0","electric":"#F8D030","grass":"#78C850","ice":"#98D8D8","fighting":"#C03028","poison":"#A040A0","ground":"#E0C068","flying":"#A890F0","psychic":"#F85888","bug":"#A8B820","rock":"#B8A038","ghost":"#705898","dragon":"#7038F8","dark":"#705848","steel":"#B8B8D0","fairy":"#EE99AC"};
 const MODE_LBL = {"regular":"Regular","mega":"Mega","legendary":"Legendary","mythical":"Mythical"};
 const MODE_CLS = {"regular":"badge-regular","mega":"badge-mega","legendary":"badge-legendary","mythical":"badge-mythical"};
 
@@ -486,12 +528,19 @@ function bestPossible(list){
 
 function shuf(a){for(let i=a.length-1;i>0;i--){let j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a}
 
-function spriteHtml(apiName, size){
+function typeBadges(name){
+  let s=SPECIES_DATA[name];
+  if(!s||!s.types) return '';
+  return s.types.map(t=>'<span class="type-badge" style="background:'+(TYPECOL[t]||'#888')+'">'+t.toUpperCase()+'</span>').join('');
+}
+
+function spriteHtml(apiName, size, shiny){
   let id = SPRITE_DATA[apiName];
   if(!id) return '';
   let s = size || 80;
-  let url = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/'+id+'.png';
-  return '<img class="poke-sprite" src="'+url+'" width="'+s+'" height="'+s+'" alt="">';
+  let base = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/';
+  let url = base + (shiny ? 'shiny/' : '') + id + '.png';
+  return '<img class="poke-sprite'+(shiny?' shiny':'')+'" src="'+url+'" width="'+s+'" height="'+s+'" alt="">';
 }
 
 // ── Language model ──
@@ -593,11 +642,19 @@ function botPick(pk,locked,mode){
 }
 
 // ── Game ──
+const SHINY_ODDS = 512;
+
 function newGame(mode,target){
   let pool=filterPool(mode);
   if(pool.length<6)return null;
   let idx=[...Array(pool.length).keys()];shuf(idx);idx=idx.slice(0,6);
-  return {mode,target,pool,turn:0,picks:[],locked:new Set(),state:"play",used:idx,cur:idx[0],shown:[]};
+  let shiny={};
+  for(let i of idx){
+    let pk=pool[i];
+    let odds=pk.mythical||pk.legendary?10:pk.mega?64:SHINY_ODDS;
+    if(Math.random()*odds<1) shiny[i]=true;
+  }
+  return {mode,target,pool,turn:0,picks:[],locked:new Set(),state:"play",used:idx,cur:idx[0],shown:[],shiny};
 }
 
 function getCurPoke(g){
@@ -614,9 +671,11 @@ function doPick(g,stat){
   if(g.locked.has(stat))return null;
   let pk=g.pool[g.cur];
   let val=pk.stats[stat]||0;
-  g.picks.push({name:pk.name,stat,val,api_name:pk.api_name});
+  let shiny=!!(g.shiny&&g.shiny[g.cur]);
+  g.picks.push({name:pk.name,stat,val,api_name:pk.api_name,shiny});
   g.locked.add(stat);
   g.shown.push(pk);
+  g._lastShiny=shiny;
   g.cur=null;
   g.turn++;
   if(g.turn>=6)g.state="done";
@@ -668,9 +727,11 @@ function renderPoke(g){
   if(!pk){el.innerHTML="";return}
   let cls=MODE_CLS[selMode]||"badge-regular",lb=MODE_LBL[selMode]||"Regular";
   let isRev=revData&&revData.name===pk.name;
+  let shiny=g.cur!==null?!!(g.shiny&&g.shiny[g.cur]):!!(g._lastShiny);
   let h='<div class="poke-header">';
-  h+='<div class="poke-sprite-wrap">'+spriteHtml(pk.api_name)+'</div>';
-  h+='<div class="poke-name">'+pk.name+'</div>';
+  h+='<div class="poke-sprite-wrap'+(shiny?' shiny':'')+'">'+spriteHtml(pk.api_name,80,shiny)+(shiny?'<span class="shiny-star">&#9733;</span>':'')+'</div>';
+  h+='<div class="poke-name">'+pk.name+(shiny?' <span style="color:#ffd700;font-size:11px">&#9733;</span>':'')+'</div>';
+  h+='<div style="margin-bottom:6px">'+typeBadges(pk.name)+'</div>';
   h+='<span class="poke-badge '+cls+'">'+lb+'</span></div>';
   for(let i=0;i<ORDER.length;i++){
     let s=ORDER[i];
@@ -689,7 +750,7 @@ function renderPoke(g){
 function renderHist(g){
   let el=document.getElementById("g-hist");
   if(!g.picks.length){el.innerHTML='<div style="color:#445566;font-size:15px">No picks</div>';return}
-  el.innerHTML=g.picks.map(p=>'<div class="history-item">'+spriteHtml(p.api_name,28)+'<span>'+p.name+' — '+LBL[p.stat]+'</span><strong>'+p.val+'</strong></div>').join("");
+  el.innerHTML=g.picks.map(p=>'<div class="history-item">'+spriteHtml(p.api_name,28,p.shiny)+'<span>'+p.name+(p.shiny?' <span style="color:#ffd700;font-size:10px">&#9733;</span>':'')+' — '+LBL[p.stat]+'</span><strong>'+p.val+'</strong></div>').join("");
 }
 
 function pickStat(s){
@@ -711,11 +772,11 @@ function showRes(g){
   let [best,ba]=bestPossible(g.shown);
   let phtml='<div class="summary-item"><div class="lbl">Score</div><div class="val" style="color:'+(pas?'#78c850':'#ff5959')+'">'+tot+'</div></div><div class="summary-item"><div class="lbl">Target</div><div class="val" style="color:#ffcb05">'+g.target+'</div></div><div class="summary-item"><div class="lbl">Best</div><div class="val" style="color:#6890f0">'+best+'</div></div><div class="summary-item"><div class="lbl">Result</div><div class="val" style="color:'+(pas?'#78c850':'#ff5959')+'">'+(pas?'PASS':'FAIL')+'</div></div>';
   document.getElementById("res-grid").innerHTML=phtml;
-  document.getElementById("res-team").innerHTML=g.picks.map(p=>'<div class="history-item">'+spriteHtml(p.api_name,32)+'<span>'+p.name+' — '+LBL[p.stat]+'</span><strong>'+p.val+'</strong></div>').join("");
+  document.getElementById("res-team").innerHTML=g.picks.map(p=>'<div class="history-item">'+spriteHtml(p.api_name,32,p.shiny)+'<span>'+p.name+(p.shiny?' <span style="color:#ffd700;font-size:10px">&#9733;</span>':'')+' — '+LBL[p.stat]+'</span><strong>'+p.val+'</strong></div>').join("");
   let o=document.getElementById("res-opt");
   if(ba){
-    let apiMap={};g.shown.forEach(p=>{apiMap[p.name]=p.api_name});
-    o.innerHTML='<table class="opt-table"><tr><th>Stat</th><th>Pokemon</th><th>Val</th></tr>'+ba.map(x=>'<tr><td>'+LBL[x[0]]+'</td><td>'+(apiMap[x[1]]?spriteHtml(apiMap[x[1]],24)+' ':'')+x[1]+'</td><td><strong>'+x[2]+'</strong></td></tr>').join("")+'</table>';
+    let apiMap={};g.shown.forEach(p=>{apiMap[p.name]={api:p.api_name,shiny:!!(g.shiny&&g.shiny[g.used[g.shown.indexOf(p)]])}});
+    o.innerHTML='<table class="opt-table"><tr><th>Stat</th><th>Pokemon</th><th>Val</th></tr>'+ba.map(x=>{let m=apiMap[x[1]];return '<tr><td>'+LBL[x[0]]+'</td><td>'+(m?spriteHtml(m.api,24,m.shiny)+' ':'')+x[1]+(m&&m.shiny?' <span style="color:#ffd700">&#9733;</span>':'')+'</td><td><strong>'+x[2]+'</strong></td></tr>'}).join("")+'</table>';
   }else o.innerHTML='<div style="color:#445566;font-size:15px">No data</div>';
 }
 
@@ -735,8 +796,15 @@ function runBot(mode){
   if(pool.length<6){showErr("Not enough Pokemon");return}
   let avail=[...Array(pool.length).keys()];shuf(avail);avail=avail.slice(0,6);
   let turns=[],locked=new Set(),total=0;
+  let bShiny={};
   for(let i of avail){
     let pk=pool[i];
+    let odds=pk.mythical||pk.legendary?10:pk.mega?64:SHINY_ODDS;
+    if(Math.random()*odds<1) bShiny[i]=true;
+  }
+  for(let i of avail){
+    let pk=pool[i];
+    let isShiny=!!bShiny[i];
     let [st,conf]=botPick(pk,locked,mode);
     let val=pk.stats[st]||0,ab=ORDER.reduce((a,b)=>pk.stats[a]>=pk.stats[b]?a:b);
     total+=val;locked.add(st);
@@ -750,7 +818,7 @@ function runBot(mode){
       let sorted=ORDER.map(s=>({s, v:pk.stats[s]||0})).sort((a,b)=>b.v-a.v).slice(0,3);
       feats=sorted.map(x=>({feature:LBL[x.s]+"="+x.v,weight:x.v}));
     }
-    turns.push({pokemon:{name:pk.name,api_name:pk.api_name,stats:Object.fromEntries(ORDER.map(s=>[LBL[s],pk.stats[s]||0]))},decision:{picked:LBL[st],actualBest:LBL[ab],value:val,bestVal:pk.stats[ab],confidence:conf},features:feats,locked:[...locked]});
+    turns.push({pokemon:{name:pk.name,api_name:pk.api_name,shiny:isShiny,stats:Object.fromEntries(ORDER.map(s=>[LBL[s],pk.stats[s]||0]))},decision:{picked:LBL[st],actualBest:LBL[ab],value:val,bestVal:pk.stats[ab],confidence:conf},features:feats,locked:[...locked]});
   }
   let [best,ba]=bestPossible(avail.map(i=>pool[i]));
   let eff=best>0?Math.round(total/best*1000)/10:0;
@@ -769,9 +837,11 @@ function renderBotTurn(){
   document.getElementById("b-score").textContent="Score: "+tot;
   document.getElementById("b-prog").textContent=tot;
   let pk=tr.pokemon,bd=tr.decision;
+  let isShiny=!!pk.shiny;
   let h='<div class="poke-header">';
-  h+='<div class="poke-sprite-wrap">'+spriteHtml(pk.api_name)+'</div>';
-  h+='<div class="poke-name">'+pk.name+' <span class="poke-badge" style="background:'+(isAI?"#cc3333":"#3366cc")+';color:#fff;font-family:\'Press Start 2P\',monospace;font-size:7px">'+(isAI?"AI":"Poke")+'</span></div></div>';
+  h+='<div class="poke-sprite-wrap'+(isShiny?' shiny':'')+'">'+spriteHtml(pk.api_name,80,isShiny)+(isShiny?'<span class="shiny-star">&#9733;</span>':'')+'</div>';
+  h+='<div class="poke-name">'+pk.name+(isShiny?' <span style="color:#ffd700;font-size:11px">&#9733;</span>':'')+' <span class="poke-badge" style="background:'+(isAI?"#cc3333":"#3366cc")+';color:#fff;font-family:\'Press Start 2P\',monospace;font-size:7px">'+(isAI?"AI":"Poke")+'</span></div>';
+  h+='<div style="margin-bottom:6px">'+typeBadges(pk.name)+'</div></div>';
   for(let sk of ORDER){
     let sl=LBL[sk],val=pk.stats[sl]||0,pi=sl===bd.picked,bi=sl===bd.actualBest;
     let cl="stat-row";
@@ -802,7 +872,7 @@ function renderBotTurn(){
   h+='</div>';
   document.getElementById("b-poke").innerHTML=h;
   let hh="";
-  for(let i=0;i<=t;i++){let d=botData.turns[i];hh+='<div class="history-item">'+spriteHtml(d.pokemon.api_name,28)+'<span>'+(i+1)+'. '+d.pokemon.name+' — '+d.decision.picked+'</span><strong>'+d.decision.value+' '+(d.decision.picked===d.decision.actualBest?"OK":"")+'</strong></div>'}
+  for(let i=0;i<=t;i++){let d=botData.turns[i];let p=d.pokemon;hh+='<div class="history-item">'+spriteHtml(p.api_name,28,p.shiny)+'<span>'+(i+1)+'. '+p.name+(p.shiny?' <span style="color:#ffd700;font-size:10px">&#9733;</span>':'')+' — '+d.decision.picked+'</span><strong>'+d.decision.value+' '+(d.decision.picked===d.decision.actualBest?"OK":"")+'</strong></div>'}
   document.getElementById("b-hist").innerHTML=hh;
   if(t+1<6){if(botSpeed>0)setTimeout(()=>{botTurn++;renderBotTurn()},botSpeed);else{botTurn++;renderBotTurn()}}
   else setTimeout(showBotRes,botSpeed);
@@ -817,12 +887,12 @@ function showBotRes(){
   document.getElementById("bres-again").style.background=theme.color;
   document.getElementById("bres-summary").innerHTML='<div class="summary-item"><div class="lbl">Score</div><div class="val" style="color:'+(g.passed?"#78c850":"#ff4444")+'">'+g.total+'</div></div><div class="summary-item"><div class="lbl">Target</div><div class="val" style="color:#ffcb05">'+g.target+'</div></div><div class="summary-item"><div class="lbl">Efficiency</div><div class="val" style="color:#6890f0">'+g.efficiency+'%</div></div><div class="summary-item"><div class="lbl">Result</div><div class="val" style="color:'+(g.passed?"#78c850":"#ff4444")+'">'+(g.passed?"PASS":"FAIL")+'</div></div>';
   let h="";
-  for(let i=0;i<g.turns.length;i++){let d=g.turns[i].decision,c=d.picked===d.actualBest;h+='<div class="history-item">'+spriteHtml(g.turns[i].pokemon.api_name,32)+'<span>'+(i+1)+'. '+g.turns[i].pokemon.name+'</span><span>'+d.picked+' ('+d.value+') <span style="color:'+(c?"#78c850":"#ff4444")+'">'+(c?"OK":"best: "+d.actualBest+"="+d.bestVal)+'</span></span></div>'}
+  for(let i=0;i<g.turns.length;i++){let d=g.turns[i].decision,c=d.picked===d.actualBest;let p=g.turns[i].pokemon;h+='<div class="history-item">'+spriteHtml(p.api_name,32,p.shiny)+'<span>'+(i+1)+'. '+p.name+(p.shiny?' <span style="color:#ffd700;font-size:10px">&#9733;</span>':'')+'</span><span>'+d.picked+' ('+d.value+') <span style="color:'+(c?"#78c850":"#ff4444")+'">'+(c?"OK":"best: "+d.actualBest+"="+d.bestVal)+'</span></span></div>'}
   document.getElementById("bres-review").innerHTML=h;
   let o=document.getElementById("bres-opt");
   if(g.optimal.length){
-    let apiMap={};g.turns.forEach(t=>{apiMap[t.pokemon.name]=t.pokemon.api_name});
-    o.innerHTML='<table class="opt-table"><tr><th>Stat</th><th>Pokemon</th><th>Val</th></tr>'+g.optimal.map(x=>'<tr><td>'+x.stat+'</td><td>'+(apiMap[x.name]?spriteHtml(apiMap[x.name],24)+' ':'')+x.name+'</td><td><strong>'+x.val+'</strong></td></tr>').join("")+'</table>';
+    let apiMap={};g.turns.forEach(t=>{apiMap[t.pokemon.name]={api:t.pokemon.api_name,shiny:t.pokemon.shiny}});
+    o.innerHTML='<table class="opt-table"><tr><th>Stat</th><th>Pokemon</th><th>Val</th></tr>'+g.optimal.map(x=>{let m=apiMap[x.name];return '<tr><td>'+x.stat+'</td><td>'+(m?spriteHtml(m.api,24,m.shiny)+' ':'')+x.name+(m&&m.shiny?' <span style="color:#ffd700">&#9733;</span>':'')+'</td><td><strong>'+x.val+'</strong></td></tr>'}).join("")+'</table>';
   }else o.innerHTML='<div style="color:#445566;font-size:15px">No data</div>';
 }
 
